@@ -7,7 +7,6 @@ import {
   Text,
   useWindowDimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONT, SPACING } from '../constants/theme';
 
@@ -36,8 +35,7 @@ function timing(value, toValue, duration, easing) {
   });
 }
 
-export default function SplashIntro() {
-  const router = useRouter();
+export default function SplashIntro({ onFinish }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const navigated = useRef(false);
@@ -62,8 +60,8 @@ export default function SplashIntro() {
   const goToAuth = useCallback(() => {
     if (navigated.current) return;
     navigated.current = true;
-    router.replace('/login');
-  }, [router]);
+    onFinish?.();
+  }, [onFinish]);
 
   useEffect(() => {
     const intro = Animated.sequence([

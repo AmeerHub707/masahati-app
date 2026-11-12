@@ -12,26 +12,27 @@ import {
 import { Link, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
-import GoogleButton from '../../src/components/GoogleButton';
+import GoogleAuthButton from '../../src/components/GoogleAuthButton';
 import TextField from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
+import { consumeSessionExpired, routeForUser } from '../../src/lib/authStore';
 import { validateLogin } from '../../src/utils/validation';
 import { COLORS, FONT, RADIUS, SPACING } from '../../src/constants/theme';
 
 export default function Login() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
+  const [expired] = useState(() => consumeSessionExpired());
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async () => {
-    const nextErrors = validateLogin({ email, password });
+    const nextErrors = validateLogin({ login: identifier, password });
     setErrors(nextErrors);
     setFormError('');
 
@@ -39,25 +40,38 @@ export default function Login() {
 
     setLoading(true);
     try {
-      await signIn({ email: email.trim(), password });
-      router.replace('/home');
+      const session = await signIn({ login: identifier.trim(), password });
+      const target = routeForUser(session.user);
+      if (__DEV__) {
+        console.log(
+          '[auth] route target:',
+          target,
+          '| role:',
+          session.user?.role,
+          '| status:',
+          session.user?.status
+        );
+      }
+      if (target === '/login') {
+        const diag = __DEV__
+          ? `\n[role=${String(session.user?.role ?? 'none')} | status=${String(
+              session.user?.status ?? 'none'
+            )}]`
+          : '';
+        setFormError(
+          'تعذّر التحقق من نوع الحساب. تأكد من بيانات حسابك أو تواصل مع الدعم.' + diag
+        );
+        return;
+      }
+      router.replace(target);
     } catch (error) {
-      setFormError(error.message || 'تعذر تسجيل الدخول');
+      if (error.fieldErrors) {
+        setErrors((prev) => ({ ...prev, ...error.fieldErrors }));
+      } else {
+        setFormError(error.message || 'تعذر تسجيل الدخول');
+      }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogle = async () => {
-    setFormError('');
-    setGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-      router.replace('/home');
-    } catch (error) {
-      setFormError(error.message || 'تعذر تسجيل الدخول عبر Google');
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -86,16 +100,16 @@ export default function Login() {
 
         <View style={styles.form}>
           <TextField
-            label="البريد الإلكتروني"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="example@mail.com"
+            label="البريد الإلكتروني أو رقم الهاتف"
+            value={identifier}
+            onChangeText={setIdentifier}
+            placeholder="name@example.com"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            autoComplete="email"
-            textContentType="emailAddress"
-            error={errors.email}
+            autoComplete="username"
+            textContentType="username"
+            error={errors.login}
           />
 
           <TextField
@@ -108,6 +122,12 @@ export default function Login() {
             textContentType="password"
             error={errors.password}
           />
+
+          {expired && !formError ? (
+            <View style={styles.infoBox}>
+              <Text style={styles.infoText}>انتهت جلستك السابقة. سجّل الدخول من جديد.</Text>
+            </View>
+          ) : null}
 
           {formError ? (
             <View style={styles.errorBox}>
@@ -123,7 +143,7 @@ export default function Login() {
             <View style={styles.dividerLine} />
           </View>
 
-          <GoogleButton onPress={handleGoogle} loading={googleLoading} />
+          <GoogleAuthButton />
         </View>
 
         <View style={styles.footer}>
@@ -134,10 +154,7 @@ export default function Login() {
               </Text>
             </Pressable>
           </Link>
-
-          <Pressable hitSlop={8} onPress={() => router.replace('/home')}>
-            <Text style={styles.guest}>المتابعة كضيف</Text>
-          </Pressable>
+          {__DEV__ ? <Text style={styles.devTag}>dashboard build</Text> : null}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -190,6 +207,18 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
   },
+  infoBox: {
+    backgroundColor: COLORS.warningSoft,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  infoText: {
+    color: '#B54708',
+    fontSize: FONT.sm,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -219,6 +248,11 @@ const styles = StyleSheet.create({
   footerStrong: {
     color: COLORS.brand,
     fontWeight: '700',
+  },
+  devTag: {
+    fontSize: 10,
+    color: '#B0B0B8',
+    letterSpacing: 1,
   },
   guest: {
     fontSize: FONT.sm,

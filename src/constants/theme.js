@@ -3,6 +3,7 @@ export const COLORS = {
   brandDark: '#C74A00',
   brandSoft: '#FFF2EA',
   white: '#FFFFFF',
+  bg: '#F7F7F8',
   text: '#111827',
   textMuted: '#6B7280',
   border: '#E5E7EB',
@@ -10,6 +11,12 @@ export const COLORS = {
   danger: '#D92D20',
   dangerSoft: '#FEF3F2',
   placeholder: '#9CA3AF',
+  success: '#16A34A',
+  successSoft: '#ECFDF3',
+  warning: '#F59E0B',
+  warningSoft: '#FFFAEB',
+  info: '#2563EB',
+  infoSoft: '#EFF8FF',
 };
 
 export const SPACING = {
@@ -40,8 +47,18 @@ export const FONT = {
   xxl: 32,
 };
 
+export const SHADOW = {
+  shadowColor: '#000',
+  shadowOpacity: 0.08,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 8 },
+  elevation: 4,
+};
+
 // Arabic text helpers (manual RTL, works in Expo Go without a native rebuild)
 export const RTL_TEXT = {
   textAlign: 'right',
   writingDirection: 'rtl',
 };
+
+export const BRAND_GRADIENT = ['#FB923C', '#F97316', '#EA580C'];

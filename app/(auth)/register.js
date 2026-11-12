@@ -11,8 +11,10 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
+import GoogleAuthButton from '../../src/components/GoogleAuthButton';
 import TextField from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
+import { routeForUser } from '../../src/lib/authStore';
 import { validateRegister } from '../../src/utils/validation';
 import { COLORS, FONT, RADIUS, SPACING } from '../../src/constants/theme';
 
@@ -39,14 +41,21 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await signUp({
+      const result = await signUp({
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
         password,
       });
-      router.replace('/home');
+      if (result?.pending) {
+        router.replace('/pending-approval');
+      } else {
+        router.replace(routeForUser(result?.user));
+      }
     } catch (error) {
+      if (error.fieldErrors) {
+        setErrors((prev) => ({ ...prev, ...error.fieldErrors }));
+      }
       setFormError(error.message || 'تعذر إنشاء الحساب');
     } finally {
       setLoading(false);
@@ -126,6 +135,14 @@ export default function Register() {
           ) : null}
 
           <Button title="إنشاء الحساب" onPress={handleSubmit} loading={loading} />
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>أو</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <GoogleAuthButton />
         </View>
 
         <Pressable hitSlop={8} onPress={() => router.replace('/login')} style={styles.footer}>
@@ -174,6 +191,22 @@ const styles = StyleSheet.create({
     color: COLORS.danger,
     fontSize: FONT.sm,
     textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    marginVertical: SPACING.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  dividerText: {
+    fontSize: FONT.sm,
+    color: COLORS.textMuted,
     writingDirection: 'rtl',
   },
   footer: {

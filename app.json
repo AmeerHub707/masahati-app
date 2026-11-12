@@ -8,9 +8,11 @@
     "userInterfaceStyle": "light",
     "scheme": "masahati",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.masahati.app"
     },
     "android": {
+      "package": "com.masahati.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -32,7 +34,14 @@
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "نحتاج الوصول إلى صورك لاختيار صورة الحساب."
+        }
+      ],
+      "expo-secure-store"
     ]
   }
 }
